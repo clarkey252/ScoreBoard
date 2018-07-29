@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="uk.co.clarkey252.scoreboard.MainActivity"
+    android:gravity="center"
+    android:orientation="vertical">
+
+    <Button
+        android:layout_width="@dimen/main_button_width"
+        android:layout_height="@dimen/main_button_height"
+        android:id="@+id/new_scoreboard_button"
+        android:text="@string/new_scoreboard"/>
+    <Button
+        android:layout_width="@dimen/main_button_width"
+        android:layout_height="@dimen/main_button_height"
+        android:id="@+id/resume_scoreboard"
+        android:text="@string/resume_scoreboard"/>
+    <Button
+        android:layout_width="@dimen/main_button_width"
+        android:layout_height="@dimen/main_button_height"
+        android:id="@+id/settings"
+        android:text="@string/settings"/>
+    <Button
+        android:layout_width="@dimen/main_button_width"
+        android:layout_height="@dimen/main_button_height"
+        android:id="@+id/donate"
+        android:text="@string/donate"/>
+
+</LinearLayout>

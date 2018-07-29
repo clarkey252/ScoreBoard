@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">ScoreBoard</string>
+    <string name="new_scoreboard">New Scoreboard</string>
+    <string name="resume_scoreboard">Resume</string>
+    <string name="settings">Settings</string>
+    <string name="donate">Donate</string>
+</resources>
