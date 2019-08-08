@@ -23,7 +23,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static android.view.WindowManager.*;
+import static android.view.WindowManager.LayoutParams;
 
 public class Scoreboard extends Activity {
 
@@ -49,12 +49,17 @@ public class Scoreboard extends Activity {
         getDisplayMetrics();
 
         getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        playerScores = new TextView[numberOfPlayers];
-        setPlayerColors();
-
-        setLayouts();
-
+        Bundle extras = getIntent().getExtras();
+        boolean resume = extras != null && extras.getBoolean("resume", false);
+        boolean read = false;
+        if (resume) {
+            read = readGamestateFile();
+        }
+        if (!read) {
+            playerScores = new TextView[numberOfPlayers];
+            setPlayerColors();
+            setLayouts();
+        }
         ImageButton settingsButton = (ImageButton) findViewById(R.id.settings_button);
         settingsButton.setOnClickListener(settingsClick);
 
@@ -82,11 +87,7 @@ public class Scoreboard extends Activity {
     }
 
     private void setPlayerColors() {
-        for (int i = 0; i < numberOfPlayers; i++) {
-            //TODO update this when colours sorted
-        }
-        //playerColors[0]= Color.argb(0xFF,0xFF,0xFF,0xC0);
-        //playerColors[1]= Color.argb(0xFF,0xFF,0xFF,0x40);
+        //TODO update this when colours sorted
         playerColors[0] = Color.argb(0xFF, 0xF0, 0x34, 0x34);
         playerColors[1] = Color.argb(0xFF, 0x34, 0x34, 0xf0);
 
@@ -100,11 +101,9 @@ public class Scoreboard extends Activity {
 
     private void writeGamestateToFile() {
         File file = new File(getApplicationContext().getFilesDir(), SAVE_FILE_NAME);
-        FileWriter fw = null;
-        BufferedWriter bw = null;
-        try {
-            fw = new FileWriter(file);
-            bw = new BufferedWriter(fw);
+        try (
+                FileWriter fw = new FileWriter(file);
+                BufferedWriter bw = new BufferedWriter(fw)) {
             int players = playerScores.length;
             bw.write(String.valueOf(players));
             bw.newLine();
@@ -116,15 +115,6 @@ public class Scoreboard extends Activity {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                bw.close();
-            } catch (Exception e) {
-            }
-            try {
-                fw.close();
-            } catch (Exception e) {
-            }
         }
     }
 
@@ -134,14 +124,12 @@ public class Scoreboard extends Activity {
         readGamestateFile();
     }
 
-    private void readGamestateFile() {
+    private boolean readGamestateFile() {
         File file = new File(getApplicationContext().getFilesDir(), SAVE_FILE_NAME);
         if (file.exists()) {
-            FileReader fr = null;
-            BufferedReader br = null;
-            try {
-                fr = new FileReader(file);
-                br = new BufferedReader(fr);
+            try (
+                    FileReader fr = new FileReader(file);
+                    BufferedReader br = new BufferedReader(fr)) {
                 String s = br.readLine();
                 int players = Integer.valueOf(s);
                 playerScores = new TextView[players];
@@ -155,19 +143,12 @@ public class Scoreboard extends Activity {
                 for (int i = 0; i < players; i++) {
                     playerScores[i].setText(newScores[i]);
                 }
+                return true;
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                try {
-                    br.close();
-                } catch (Exception e) {
-                }
-                try {
-                    fr.close();
-                } catch (Exception e) {
-                }
             }
         }
+        return false;
     }
 
     private void addPlayerLayout(RelativeLayout layout, int player) {
