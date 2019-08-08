@@ -16,9 +16,16 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import static android.view.WindowManager.*;
 
-public class Scoreboard extends Activity{
+public class Scoreboard extends Activity {
 
     int numberOfPlayers = 2;
     int[] playerColors = new int[2];
@@ -29,6 +36,7 @@ public class Scoreboard extends Activity{
     int screenWidth;
     int screenHeight;
 
+    private static final String SAVE_FILE_NAME = "saveFile.dat";
     float BUTTON_FONT_SIZE = 32f;
     float SCORE_FONT_SIZE = 72f;
 
@@ -42,10 +50,20 @@ public class Scoreboard extends Activity{
 
         getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        wholePage = (LinearLayout) findViewById(R.id.scoreborad_whole_page);
         playerScores = new TextView[numberOfPlayers];
         setPlayerColors();
-        for (int i = 0; i< numberOfPlayers; i++) {
+
+        setLayouts();
+
+        ImageButton settingsButton = (ImageButton) findViewById(R.id.settings_button);
+        settingsButton.setOnClickListener(settingsClick);
+
+    }
+
+    private void setLayouts() {
+        wholePage = (LinearLayout) findViewById(R.id.scoreborad_whole_page);
+        wholePage.removeAllViews();
+        for (int i = 0; i < numberOfPlayers; i++) {
             RelativeLayout r = new RelativeLayout(getApplicationContext());
             ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(screenWidth, screenHeight / numberOfPlayers);
             r.setLayoutParams(lp);
@@ -53,29 +71,103 @@ public class Scoreboard extends Activity{
             r.setTag("Player" + i + "_layout");
             r.setBackgroundColor(playerColors[i]);
             wholePage.addView(r);
-            addPlayerLayout(r,i);
-            if (i!=(numberOfPlayers-1)){
+            addPlayerLayout(r, i);
+            if (i != (numberOfPlayers - 1)) {
                 View v = new View(getApplicationContext());
-                v.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,10));
+                v.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 10));
                 v.setBackgroundColor(Color.BLACK);
                 wholePage.addView(v);
             }
         }
-
-        ImageButton settingsButton = (ImageButton) findViewById(R.id.settings_button);
-        settingsButton.setOnClickListener(settingsClick);
-
     }
 
     private void setPlayerColors() {
-        for (int i=0;i< numberOfPlayers;i++){
+        for (int i = 0; i < numberOfPlayers; i++) {
             //TODO update this when colours sorted
         }
         //playerColors[0]= Color.argb(0xFF,0xFF,0xFF,0xC0);
         //playerColors[1]= Color.argb(0xFF,0xFF,0xFF,0x40);
-        playerColors[0]= Color.argb(0xFF,0xF0,0x34,0x34);
-        playerColors[1]= Color.argb(0xFF,0x34,0x34,0xf0);
+        playerColors[0] = Color.argb(0xFF, 0xF0, 0x34, 0x34);
+        playerColors[1] = Color.argb(0xFF, 0x34, 0x34, 0xf0);
 
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        writeGamestateToFile();
+    }
+
+    private void writeGamestateToFile() {
+        File file = new File(getApplicationContext().getFilesDir(), SAVE_FILE_NAME);
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        try {
+            fw = new FileWriter(file);
+            bw = new BufferedWriter(fw);
+            int players = playerScores.length;
+            bw.write(String.valueOf(players));
+            bw.newLine();
+            for (int i = 0; i < players; i++) {
+                bw.write(String.valueOf(playerScores[i].getText()));
+                bw.newLine();
+                bw.write(String.valueOf(playerColors[i]));
+                bw.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                bw.close();
+            } catch (Exception e) {
+            }
+            try {
+                fw.close();
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        readGamestateFile();
+    }
+
+    private void readGamestateFile() {
+        File file = new File(getApplicationContext().getFilesDir(), SAVE_FILE_NAME);
+        if (file.exists()) {
+            FileReader fr = null;
+            BufferedReader br = null;
+            try {
+                fr = new FileReader(file);
+                br = new BufferedReader(fr);
+                String s = br.readLine();
+                int players = Integer.valueOf(s);
+                playerScores = new TextView[players];
+                playerColors = new int[players];
+                String[] newScores = new String[players];
+                for (int i = 0; i < players; i++) {
+                    newScores[i] = br.readLine();
+                    playerColors[i] = Integer.valueOf(br.readLine());
+                }
+                setLayouts();
+                for (int i = 0; i < players; i++) {
+                    playerScores[i].setText(newScores[i]);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    br.close();
+                } catch (Exception e) {
+                }
+                try {
+                    fr.close();
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 
     private void addPlayerLayout(RelativeLayout layout, int player) {
@@ -87,21 +179,21 @@ public class Scoreboard extends Activity{
         Button negative = new Button(getApplicationContext());
         formatScoreButton(negative);
         negative.setText("-");
-        negative.setTag("p"+player+"_negative");
+        negative.setTag("p" + player + "_negative");
         negative.setOnClickListener(nOCL);
 
         Button positive = new Button(getApplicationContext());
         formatScoreButton(positive);
         positive.setText("+");
-        positive.setTag("p"+player+"_positive");
+        positive.setTag("p" + player + "_positive");
         positive.setOnClickListener(pOCL);
 
         TextView score = new TextView(getApplicationContext());
         score.setText(initialScore);
         score.setTextColor(Color.BLACK);
         score.setTextSize(SCORE_FONT_SIZE);
-        score.setTag("p"+player+"_score");
-        score.setPadding(32,32,32,32);
+        score.setTag("p" + player + "_score");
+        score.setPadding(32, 32, 32, 32);
         playerScores[player] = score;
 
         ll.addView(negative);
@@ -115,7 +207,7 @@ public class Scoreboard extends Activity{
         b.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
         b.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         b.setTextAlignment(View.TEXT_ALIGNMENT_CENTER);
-        b.setPadding(0,0,0,0);
+        b.setPadding(0, 0, 0, 0);
         b.setGravity(Gravity.CENTER);
         b.setTextSize(BUTTON_FONT_SIZE);
     }
@@ -131,7 +223,7 @@ public class Scoreboard extends Activity{
         @Override
         public void onClick(View v) {
             String tag = v.getTag().toString();
-            int playerNo = Integer.valueOf(tag.substring(tag.indexOf("p")+1,tag.indexOf("_")));
+            int playerNo = Integer.valueOf(tag.substring(tag.indexOf("p") + 1, tag.indexOf("_")));
             int playerScore = Integer.valueOf(playerScores[playerNo].getText().toString());
             playerScore += increment;
             playerScores[playerNo].setText(String.valueOf(playerScore));
@@ -142,7 +234,7 @@ public class Scoreboard extends Activity{
         @Override
         public void onClick(View v) {
             String tag = v.getTag().toString();
-            int playerNo = Integer.valueOf(tag.substring(tag.indexOf("p")+1,tag.indexOf("_")));
+            int playerNo = Integer.valueOf(tag.substring(tag.indexOf("p") + 1, tag.indexOf("_")));
             int playerScore = Integer.valueOf(playerScores[playerNo].getText().toString());
             playerScore -= increment;
             playerScores[playerNo].setText(String.valueOf(playerScore));
@@ -152,11 +244,11 @@ public class Scoreboard extends Activity{
     View.OnClickListener settingsClick = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            PopupMenu p = new PopupMenu(getApplicationContext(),v,Gravity.CENTER);
-            p.getMenuInflater().inflate(R.menu.settings,p.getMenu());
+            PopupMenu p = new PopupMenu(getApplicationContext(), v, Gravity.CENTER);
+            p.getMenuInflater().inflate(R.menu.settings, p.getMenu());
             p.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                 public boolean onMenuItemClick(MenuItem item) {
-                    Toast.makeText(getApplicationContext(),"You Clicked : " + item.getTitle(),Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), "You Clicked : " + item.getTitle(), Toast.LENGTH_SHORT).show();
                     return true;
                 }
             });
